@@ -117,7 +117,7 @@ class LayerNorm(nn.LayerNorm):
         return ret.type(orig_type)
 
 class CrossAttention(nn.Module):
-    def __init__(self, device=None, N=3, d_model=512, d_ff=1024, h=4, dropout=0.2):
+    def __init__(self, device=None, N=1, d_model=512, d_ff=1024, h=4, dropout=0.2):
         super(CrossAttention, self).__init__()
         self.dtype = torch.float16
         c = copy.deepcopy
