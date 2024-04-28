@@ -223,8 +223,8 @@ class ExGAN():
 
 
 def main():
-    # model_name = ['CLIP-B16', 'CLIP-L14']
-    model_name = ['CLIP-L14']
+    model_name = ['CLIP-B16', 'CLIP-L14']
+    # model_name = ['CLIP-L14']
     for model in model_name:
         num_task = 12
         exgan = ExGAN(model)
