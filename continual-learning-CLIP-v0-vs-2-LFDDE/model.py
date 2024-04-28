@@ -49,11 +49,14 @@ class FeatureSlection(nn.Module):
 
 
 class Head(nn.Module):
-    def __init__(self, c_dim=100, device=None):
+    def __init__(self, c_dim=100, device=None, in_dim=768):
         super(Head, self).__init__()
-        self.cross_attention = CrossAttention(device)
+        self.cross_attention = CrossAttention(device, in_dim)
+        self.out_dim = 512
+        if in_dim == 1024:
+            self.out_dim = 768
         self.head = nn.Sequential(
-            nn.Linear(768, c_dim)
+            nn.Linear(self.out_dim, c_dim)
         )
 
     def forward(self, task_feature, img_feature):

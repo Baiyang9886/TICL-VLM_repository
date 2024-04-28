@@ -1,14 +1,14 @@
 '''
-在v0-vs-1的基础上将cross-attention模块的数量由5个改成3个
+在 vs-2的基础上修改了数据集中样本的分类
 '''
 
 import datetime
-import time
+import time, copy
 from torch.autograd import Variable
 import torch
 import torch.nn as nn
 import numpy as np
-from model import FeatureSlection, Head, get_prompt, get_task_prompt
+from model import FeatureSlection, Head, get_prompt
 from datasets import *
 
 
@@ -37,7 +37,7 @@ def cosine_loss(class_feature, features, labels):
 
 
 class ExGAN():
-    def __init__(self):
+    def __init__(self, model_name):
         super(ExGAN, self).__init__()
         self.batch_size = 128
         self.n_epochs = 20
@@ -52,32 +52,38 @@ class ExGAN():
         self.criterion_l2 = torch.nn.MSELoss().to(self.device)
         self.criterion_cls = torch.nn.CrossEntropyLoss().to(self.device)
         self.task_prompt = ["Classify objects in the images"]
-        self.clip_model = "CLIP-L14"
+        self.clip_model = model_name
+        self.in_dim = 768
+        if self.clip_model == 'CLIP-L14':
+            self.in_dim = 1024
+
+        self.train_dict, self.test_dict = get_alldata()
         self.get_feature = FeatureSlection(device=self.device, clip_model=self.clip_model)
         self.get_feature = self.get_feature.to(self.device)
         for n, p in self.get_feature.named_parameters():
             p.requires_grad = False
         self.heads = {}
-        self.num_dim_list = [38, 101, 100, 10, 6]
-        self.task_list = ['leaf', 'food', 'dog', 'distraction', 'expression']
-        self.task_prompts = get_task_prompt(self.get_feature.text_encoder, self.device)
+        self.num_dim_list = [10, 10, 5, 5, 10, 5, 10, 10, 10, 10, 5, 10]
+        self.task_list = ['aquatic animals', 'flowers and trees', 'food containers', 'fruit and vegetables',
+                          'household electrical devices and furniture', 'insects',
+                          'large terrestrial animal', 'outdoor scenes', 'medium-size animal', 'small-size animal',
+                          'people', 'vehicles']
 
     def train(self, task):
-        self.log_write = open("log_zero_shot_CLIP-L14_continua_learning_N3_task%s.txt" % str(task), "w")
-        self.log_write_train = open("log_zero_shot_CLIP-L14_continua_learning_N3_task%s_train.txt" % str(task), "w")
-        train_data, test_data_list = get_data(self.get_feature.preprocess, self.batch_size, self.task_list, task)
+        self.log_write = open("log_zero_shot_%s_continua_learning_task%s.txt" % (self.clip_model, str(task)), "w")
+        self.log_write_train = open("log_zero_shot_%s_continua_learning_task%s_train.txt" % (self.clip_model, str(task)), "w")
+        train_data, test_data_list = get_data(self.train_dict, self.test_dict, task, self.get_feature.preprocess, self.batch_size)
         num_cls = self.num_dim_list[task]
-        head = Head(num_cls, self.device).to(self.device)
-        task_name = self.task_list[task]
+        head = Head(num_cls, self.device, self.in_dim).to(self.device)
         for p in head.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
-        class_feature = get_prompt(task_name, self.get_feature.text_encoder, self.device)
+        task_feature, class_feature = get_prompt(task, self.get_feature.text_encoder, self.device)
 
         # Optimizers
         self.optimizer = torch.optim.Adam(head.parameters(), lr=self.lr, betas=(self.b1, self.b2))
 
-        print("The train process of task %s, the number of class is %s" % (str(task), str(num_cls)))
+        print("The train process of task %s, the number of class is %s" % (self.task_list[task], str(num_cls)))
         start_time = time.time()
         acc_list = []
         best_acc = []
@@ -99,7 +105,7 @@ class ExGAN():
                 numSample = numSample + label.size(0)
                 with torch.no_grad():
                     features = self.get_feature(images)
-                out_feature, Cls = head(self.task_prompts[task_name], features)
+                out_feature, Cls = head(task_feature[task], features)
 
                 _, pred = torch.max(Cls.data, 1)
                 running_corrects += torch.sum(pred == label.data)
@@ -150,17 +156,20 @@ class ExGAN():
             if (epoch) % 1 == 0:
                 best = best_acc[task]
                 test_data = test_data_list[task]
-                acc = self.test(head, test_data, self.task_prompts[task_name])
+                acc = self.test(head, test_data, task_feature[task])
                 self.log_write.write("Epoch " + str(epoch) + "    Task" + str(task) + "    acc = " + str(acc) + "\n")
                 acc_list[task].append(acc)
                 if acc > best:
                     best_acc[task] = acc
                     self.heads[str(task)] = head
+                    torch.save(head.state_dict(), "saved_models/head_weights_best_%s_task%s.pth" % (self.clip_model, str(task)))
 
                 for k in range(task):
                     best = best_acc[k]
                     test_data = test_data_list[k]
-                    acc = self.test(self.heads[str(k)], test_data, self.task_prompts[self.task_list[k]])
+                    cur_head = self.heads[str(k)]
+                    cur_head.load_state_dict(torch.load("saved_models/head_weights_best_%s_task%s.pth" % (self.clip_model, str(task))))
+                    acc = self.test(cur_head, test_data, task_feature[k])
                     self.log_write.write("Epoch " + str(epoch) + "    Task" + str(k) + "    acc = " + str(acc) + "\n")
                     acc_list[k].append(acc)
                     if acc > best:
@@ -214,10 +223,13 @@ class ExGAN():
 
 
 def main():
-    num_task = 5
-    exgan = ExGAN()
-    for t in range(num_task):
-        exgan.train(t)
+    # model_name = ['CLIP-B16', 'CLIP-L14']
+    model_name = ['CLIP-L14']
+    for model in model_name:
+        num_task = 12
+        exgan = ExGAN(model)
+        for t in range(num_task):
+            exgan.train(t)
 
 if __name__ == "__main__":
     main()

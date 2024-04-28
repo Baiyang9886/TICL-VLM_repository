@@ -31,19 +31,16 @@ class Cifar100Dataset(Dataset):
 
 
 
-task_list = ['aquatic animals', 'flowers and trees', 'food containers', 'fruit and vegetables', 'household electrical devices and furniture', 'insects',
-         'large terrestrial animal', 'outdoor scenes', 'medium-size animal', 'small-size animal', 'people', 'vehicles']
+task_list = ['aquatic animals', 'flowers and trees', 'food containers', 'fruit and vegetables', 'household electrical devices and furniture',
+         'terrestrial animal', 'outdoor scenes', 'people', 'vehicles']
 
 class_list = [['beaver', 'dolphin', 'otter', 'seal', 'whale', 'aquarium_fish', 'flatfish', 'ray', 'shark', 'trout'],
        ['orchid', 'poppy', 'rose', 'sunflower', 'tulip', 'maple_tree', 'oak_tree', 'palm_tree', 'pine_tree', 'willow_tree'],
        ['bottle', 'bowl', 'can', 'cup', 'plate'],
        ['apple', 'mushroom', 'orange', 'pear', 'sweet_pepper'],
        ['clock', 'keyboard', 'lamp', 'telephone', 'television', 'bed', 'chair', 'couch', 'table', 'wardrobe'],
-       ['bee', 'beetle', 'butterfly', 'caterpillar', 'cockroach'],
-       ['bear', 'leopard', 'lion', 'tiger', 'wolf', 'camel', 'cattle', 'chimpanzee', 'elephant', 'kangaroo'],
+       ['bear', 'leopard', 'lion', 'tiger', 'wolf', 'camel', 'cattle', 'chimpanzee', 'elephant', 'kangaroo', 'fox', 'porcupine', 'possum', 'raccoon', 'skunk', 'crocodile', 'dinosaur', 'lizard', 'snake', 'turtle', 'crab', 'lobster', 'snail', 'spider', 'worm', 'hamster', 'mouse', 'rabbit', 'shrew', 'squirrel', 'bee', 'beetle', 'butterfly', 'caterpillar', 'cockroach'],
        ['bridge', 'castle', 'house', 'road', 'skyscraper', 'cloud', 'forest', 'mountain', 'plain', 'sea'],
-       ['fox', 'porcupine', 'possum', 'raccoon', 'skunk', 'crocodile', 'dinosaur', 'lizard', 'snake', 'turtle'],
-       ['crab', 'lobster', 'snail', 'spider', 'worm', 'hamster', 'mouse', 'rabbit', 'shrew', 'squirrel'],
        ['baby', 'boy', 'girl', 'man', 'woman'],
        ['bicycle', 'bus', 'motorcycle', 'pickup_truck', 'train', 'lawn_mower', 'rocket', 'streetcar', 'tank', 'tractor']]
 
@@ -73,7 +70,7 @@ def get_data_dict(train_data, classes):
         lab = label[i]
         for cls in classes:
             if lab == classes[cls]:
-                for t in range(12):
+                for t in range(9):
                     if cls in class_list[t]:
                         sample = {}
                         task = task_list[t]

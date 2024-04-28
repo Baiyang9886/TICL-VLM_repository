@@ -117,22 +117,26 @@ class LayerNorm(nn.LayerNorm):
         return ret.type(orig_type)
 
 class CrossAttention(nn.Module):
-    def __init__(self, device=None, N=3, d_model=512, d_ff=1024, h=4, dropout=0.2):
+    def __init__(self, device=None, in_dim=768, N=1, d_ff=1024, h=4, dropout=0.2):
         super(CrossAttention, self).__init__()
         self.dtype = torch.float16
         c = copy.deepcopy
-        width = 768
-        out_dim = 512
-        scale = width ** -0.5
-        attn = MultiHeadedAttention(h, d_model).to(device)
-        ff = PositionwiseFeedForward(d_model, d_ff, dropout).to(device)
-        self.cross_attention = Decoder(DecoderLayer(d_model, c(attn), c(attn),
+        self. in_dim = in_dim
+        self.s_len = 197
+        self.out_dim = 512
+        if in_dim == 1024:
+            self.s_len = 257
+            self.out_dim = 768
+        scale = self. in_dim ** -0.5
+        attn = MultiHeadedAttention(h, self.out_dim).to(device)
+        ff = PositionwiseFeedForward(self.out_dim, d_ff, dropout).to(device)
+        self.cross_attention = Decoder(DecoderLayer(self.out_dim, c(attn), c(attn),
                              c(ff), dropout).to(device), N).to(device)
-        self.proj = nn.Parameter(scale * torch.randn(width, out_dim)).type(self.dtype)
-        self.text_projection = nn.Parameter(torch.empty(out_dim, out_dim)).type(self.dtype)
+        self.proj = nn.Parameter(scale * torch.randn(self. in_dim, self.out_dim)).type(self.dtype)
+        self.text_projection = nn.Parameter(torch.empty(self.out_dim, self.out_dim)).type(self.dtype)
         self.proj = self.proj.to(device)
         self.text_projection = self.text_projection.to(device)
-        self.ln_final = LayerNorm(out_dim)
+        self.ln_final = LayerNorm(self.out_dim)
 
     def forward(self, img_feature, task_feature):
         # 第一阶段 embedding
@@ -141,9 +145,9 @@ class CrossAttention(nn.Module):
         for i in range(B-1):
             task_features = torch.cat([task_features, task_feature], dim=0)
 
-        img_feature = img_feature.reshape(-1, 768).type(self.dtype)
+        img_feature = img_feature.reshape(-1, self. in_dim).type(self.dtype)
         img_feature = img_feature @ self.proj
-        img_feature = img_feature.reshape(-1, 197, 512)
+        img_feature = img_feature.reshape(-1, self.s_len, self.out_dim)
         task_features = task_features.unsqueeze(dim=1)
 
         img_feature = img_feature.type(torch.float32)
