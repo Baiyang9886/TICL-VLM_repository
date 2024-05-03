@@ -14,17 +14,12 @@ numpy 1.25.2
 
 torchvision 0.15.2
 
-time
-
-datetime
-
-math
-
-copy
-
-cv2
-
-clip
+Other dependent libraries: time, 
+datetime,
+math,
+copy,
+cv2,
+clip.
 
 
 # Datasets
