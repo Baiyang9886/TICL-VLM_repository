@@ -32,11 +32,11 @@ The LFDDE dataset is constructed by five public image classification datasets fr
 Download link: https://pan.baidu.com/s/1ob7gpDtTdZG2wC-aCWJZlA?pwd=btdl
 
 # Getting Started
-1.Configure the codes execution environment.
+**1.Configure the codes execution environment.**
 
-2.Download the corresponding datasets.
+**2.Download the corresponding datasets.**
 
-3.Execution of the codes.
+**3.Execution of the codes.**
 
 Run the codes on the LFDDE dataset:
 
