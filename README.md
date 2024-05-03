@@ -33,12 +33,13 @@ Download link: https://pan.baidu.com/s/1ob7gpDtTdZG2wC-aCWJZlA?pwd=btdl
 
 Run the codes on the LFDDE dataset:
 
-'''python
+'''
 python continual-learning-CLIP-v0-vs-2-LFDDE.py
 '''
 
 Run the codes on the cifar-100 dataset:
-'''python
+
+'''
 python continual-learning-CLIP-v0-vs-2-cifar100.py
 '''
 
