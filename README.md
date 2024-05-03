@@ -46,7 +46,7 @@ python continual-learning-CLIP-v0-vs-2-LFDDE.py
 
 Run the codes on the cifar-100 dataset:
 
-'''
+```bash
 python continual-learning-CLIP-v0-vs-2-cifar100.py
-'''
+```
 
