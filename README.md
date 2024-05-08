@@ -41,12 +41,14 @@ Download link: https://pan.baidu.com/s/1ob7gpDtTdZG2wC-aCWJZlA?pwd=btdl
 Run the codes on the LFDDE dataset:
 
 ```bash
+cd continual-learning-CLIP-v0-vs-2-LFDDE
 python continual-learning-CLIP-v0-vs-2-LFDDE.py
 ```
 
 Run the codes on the cifar-100 dataset:
 
 ```bash
+cd continual-learning-CLIP-v0-vs-2-cifar100
 python continual-learning-CLIP-v0-vs-2-cifar100.py
 ```
 
