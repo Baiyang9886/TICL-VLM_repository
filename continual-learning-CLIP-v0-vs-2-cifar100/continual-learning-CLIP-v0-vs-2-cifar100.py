@@ -15,36 +15,32 @@ from datasets import *
 
 torch.cuda.set_device(1)
 
-def cosine_loss(class_feature, features, labels):
+def mse_loss(class_feature, features, labels, criterion):
     num_sampel = features.shape[0]
-    cos_loss = 0
+    mse_loss = 0
     for i in range(num_sampel):
         feature = features[i]
         lab = int(labels[i])
         center = class_feature[lab]
         center = center.type(torch.float32)
-        dot = torch.dot(feature, center)
-        norm_feature = torch.norm(feature)
-        norm_center = torch.norm(center)
+        loss = criterion(feature, center)
+        mse_loss = mse_loss + loss
+    mse_loss = mse_loss / num_sampel
 
-        cos_sim = 1 - dot/(norm_feature * norm_center)
-        cos_loss = cos_loss + cos_sim
-    cos_loss = cos_loss / num_sampel
-    # print(cos_loss)
-
-    return cos_loss
+    return mse_loss
 
 
 
-class ExGAN():
+class TICL_VLM():
     def __init__(self, model_name):
-        super(ExGAN, self).__init__()
+        super(TICL_VLM, self).__init__()
         self.batch_size = 128
         self.n_epochs = 20
-        self.lr = 0.0003
+        self.lr = 0.00001
         self.b1 = 0.9
         self.b2 = 0.999
         self.embed_dim = 32
+        self.lamb = 1
         self.device = "cuda:1" if torch.cuda.is_available() else "cpu"
         self.Tensor = torch.cuda.FloatTensor
         self.LongTensor = torch.cuda.LongTensor
@@ -113,11 +109,11 @@ class ExGAN():
                 # Classification loss
                 cls_loss = self.criterion_cls(Cls, label)
 
-                # Cosine loss
-                cos_loss = cosine_loss(class_feature, out_feature, labels)
+                # MSE loss
+                cdc_loss = mse_loss(class_feature, out_feature, labels, self.criterion_l2)
 
                 # Total loss
-                loss = cls_loss + cos_loss
+                loss = cls_loss + self.lamb * cdc_loss
 
                 loss.backward(retain_graph=True)
                 self.optimizer.step()
@@ -131,7 +127,7 @@ class ExGAN():
                     seconds=batches_left * (time.time() - start_time) / (batches_done + 1))
 
                 print(
-                    "\r[Task %d] [Epoch %d/%d] [Batch %d/%d] [loss: %f] [cls_loss: %f] [cos_loss: %f] [train_acc: %f]ETA: %s"
+                    "\r[Task %d] [Epoch %d/%d] [Batch %d/%d] [loss: %f] [cls_loss: %f] [cdc_loss: %f] [train_acc: %f]ETA: %s"
                     % (
                         task,
                         epoch,
@@ -140,7 +136,7 @@ class ExGAN():
                         len(train_data),
                         loss.item(),
                         cls_loss.item(),
-                        cos_loss.item(),
+                        cdc_loss.item(),
                         # dis_loss.item(),
                         100.0 * running_corrects / numSample,
                         time_left,
@@ -227,9 +223,9 @@ def main():
     model_name = ['CLIP-L14']
     for model in model_name:
         num_task = 12
-        exgan = ExGAN(model)
+        ticlvlm = TICL_VLM(model)
         for t in range(num_task):
-            exgan.train(t)
+            ticlvlm.train(t)
 
 if __name__ == "__main__":
     main()
