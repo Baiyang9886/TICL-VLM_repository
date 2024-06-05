@@ -213,8 +213,8 @@ class TICL_VLM():
 
 
 def main():
-    # model_name = ['CLIP-B16', 'CLIP-L14']
-    model_name = ['CLIP-B16']
+    model_name = ['CLIP-B16', 'CLIP-L14']
+    # model_name = ['CLIP-B16']
     for model in model_name:
         num_task = 5
         ticlvlm = TICL_VLM(model)
